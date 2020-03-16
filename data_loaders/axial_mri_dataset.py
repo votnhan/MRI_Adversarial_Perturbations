@@ -27,6 +27,7 @@ class AxialMRIDataset(VisionDataset):
 
         lbl_clone = copy.deepcopy(lbl)
         lbl_clone[lbl == 4] = 3
+        lbl_clone = np.expand_dims(lbl_clone, axis=0)
 
         if self.joint_transforms:
             img, lbl_clone = self.joint_transforms(img, lbl_clone)

@@ -48,7 +48,7 @@ class SegmentationTrainer(BaseTrainer):
     def _train_epoch(self, epoch):
         self.model.train()
         self.prepare_train_epoch(epoch)
-        for batch_idx, (data, target) in enumerate(self.train_data_loader):
+        for batch_idx, (data, target, image_name) in enumerate(self.train_data_loader):
             data, target = data.to(self.device), target.to(self.device)
             output = self.model(data)
             loss = self.criterion(output, target)
@@ -101,7 +101,7 @@ class SegmentationTrainer(BaseTrainer):
         self.valid_metrics.reset()
 
         with torch.no_grad():
-            for batch_idx, (data, target) in enumerate(self.valid_data_loader):
+            for batch_idx, (data, target, image_name) in enumerate(self.valid_data_loader):
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
                 loss = self.criterion(output, target)
