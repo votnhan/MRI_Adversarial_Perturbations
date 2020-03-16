@@ -2,7 +2,7 @@
   "name": "Brain_Tumor_Segmentation_2D",
   "n_gpu": 1,
   "model": {
-    "name": "Unet",
+    "type": "UNet",
     "args": {
       "n_channels": 4,
       "n_classes": 4
@@ -58,6 +58,7 @@
     "early_stop": 10,
     "accumulation_steps": 1,
     "log_step": 5,
+    "do_validation": true,
     "do_validation_interval": 1,
     "len_epoch": 200,
     "tensorboard": true

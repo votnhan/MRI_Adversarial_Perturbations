@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import logging
 from utils import read_json, write_json
 from logger import setup_logging

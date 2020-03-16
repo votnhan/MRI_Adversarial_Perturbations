@@ -1,7 +1,7 @@
 import copy
 from torchvision import transforms as std_transforms
 from .data_loaders import AxialMRIDataLoader
-from .joint_transforms import RandomSizeAndCrop, RandomHorizonFlip
+from .joint_transforms import RandomSizeAndCrop, RandomHorizonFlip, Compose
 from .image_transforms import ToTensor, Normalization
 
 
@@ -25,7 +25,7 @@ def _create_transforms(config):
     # validation transforms
     val_transforms_list = copy.deepcopy(image_transforms_list)
 
-    joint_transforms_cp = std_transforms.Compose(joint_transforms_list)
+    joint_transforms_cp = Compose(joint_transforms_list)
     image_transforms_cp = std_transforms.Compose(image_transforms_list)
     target_transforms_cp = std_transforms.Compose(target_transforms_list)
     val_transforms_cp = std_transforms.Compose(val_transforms_list)

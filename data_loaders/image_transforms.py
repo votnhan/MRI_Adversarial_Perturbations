@@ -4,7 +4,7 @@ import torch
 
 class ToTensor:
     def __call__(self, np_data):
-        return torch.from_numpy(np_data)
+        return torch.from_numpy(np_data.copy())
 
 
 class Normalization:

@@ -4,13 +4,14 @@ from numpy import inf
 from utils import inf_loop
 from logger import TensorboardWriter
 
+
 class BaseTrainer:
     """
     Base class for all trainer
     """
     def __init__(self, model, criterion, metrics, optimizer, config):
         self.config = config
-        self.logger = None
+        self.logger = config.get_logger('trainer', config['trainer']['verbosity'])
 
         # setup GPU device if available, move models into configured device
         self.device, device_ids = self._prepare_device(config['n_gpu'])

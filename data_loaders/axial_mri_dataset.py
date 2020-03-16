@@ -5,9 +5,9 @@ from .datasets import VisionDataset
 
 
 class AxialMRIDataset(VisionDataset):
-    def __init__(self, root_dir='data', split='train', num_samples=-1, join_transforms=None, image_transform=None,
+    def __init__(self, root_dir='data', split='train', num_samples=-1, joint_transforms=None, image_transform=None,
                  target_transform=None):
-        super().__init__(root_dir, join_transforms, image_transform, target_transform)
+        super().__init__(root_dir, joint_transforms, image_transform, target_transform)
         data_path = os.path.join(root_dir, split, 'slices')
         label_path = os.path.join(root_dir, split, 'labels')
 
@@ -28,8 +28,8 @@ class AxialMRIDataset(VisionDataset):
         lbl_clone = copy.deepcopy(lbl)
         lbl_clone[lbl == 4] = 3
 
-        if self.join_transforms:
-            img, lbl_clone = self.join_transforms(img, lbl_clone)
+        if self.joint_transforms:
+            img, lbl_clone = self.joint_transforms(img, lbl_clone)
 
         if self.image_transforms:
             img = self.image_transforms(img)

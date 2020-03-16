@@ -1,11 +1,11 @@
-from torch.utils.data import dataset
+from torch.utils.data import Dataset
 from functools import reduce
 
 
-class VisionDataset(dataset):
-    def __init__(self, root_dir, join_transforms, image_transforms, target_transforms):
+class VisionDataset(Dataset):
+    def __init__(self, root_dir, joint_transforms, image_transforms, target_transforms):
         self.root_dir = root_dir
-        self.join_transforms = join_transforms
+        self.joint_transforms = joint_transforms
         self.image_transforms = image_transforms
         self.target_transform = target_transforms
 

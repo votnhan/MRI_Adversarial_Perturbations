@@ -9,7 +9,7 @@ import torch
 import numpy as np
 from data_loaders import _create_transforms
 from trainer import SegmentationTrainer
-from .parse_config import ConfigParser
+from parse_config import ConfigParser
 
 
 # fix random seed for reproducibility
@@ -35,10 +35,12 @@ def main(config):
     optimizer = config.init_obj('optimizer', module_optimizer, model.parameters())
     lr_scheduler = config.init_obj('lr_scheduler', module_lr_scheduler, optimizer)
 
-    if config['trainer']['type'] == 'SegmentationTrainer':
-        trainer = SegmentationTrainer(model, criterion, metrics, optimizer, lr_scheduler)
+    if config['trainer']['name'] == 'SegmentationTrainer':
+        trainer = SegmentationTrainer(model, criterion, metrics, optimizer, config, lr_scheduler)
     else:
         raise NotImplementedError("Unsupported trainer")
+
+    trainer.setup_loader(train_data_loader, valid_data_loader, None)
 
     trainer.train()
 
