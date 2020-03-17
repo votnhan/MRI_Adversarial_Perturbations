@@ -1,7 +1,7 @@
 import copy
 from torchvision import transforms as std_transforms
 from .data_loaders import AxialMRIDataLoader
-from .joint_transforms import RandomSizeAndCrop, RandomHorizonFlip, Compose
+from .joint_transforms import RandomSizeAndCrop, Resize, RandomHorizonFlip, Compose
 from .image_transforms import ToTensor, Normalization
 
 
@@ -11,8 +11,9 @@ def _create_transforms(config):
 
     # joint transforms
     random_resize_crop = RandomSizeAndCrop(joint_tf_cfg['crop_size'], range_scale=tuple(joint_tf_cfg['range_scale']))
+    resize = Resize((joint_tf_cfg['crop_size'], joint_tf_cfg['crop_size']))
     flip = RandomHorizonFlip()
-    joint_transforms_list = [random_resize_crop, flip]
+    joint_transforms_list = [random_resize_crop, resize, flip]
 
     # image transforms
     to_tf = ToTensor()

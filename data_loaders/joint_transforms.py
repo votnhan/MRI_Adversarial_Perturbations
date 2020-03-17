@@ -15,7 +15,7 @@ class Compose(object):
 
 
 class RandomSizeAndCrop:
-    def __init__(self, size, range_scale=(0.8, 1.2), interpolation=PIL.Image.BILINEAR):
+    def __init__(self, size, range_scale=(0.8, 1.2), interpolation=cv2.INTER_LINEAR):
         self.size = size
         self.scale_min = range_scale[0]
         self.scale_max = range_scale[1]
@@ -58,7 +58,7 @@ class RandomCrop:
             y1 = random.randint(0, h - self.crop_size)
 
         cropped_data = np_data[:, x1: x1+self.crop_size, y1: y1+self.crop_size]
-        cropped_label = np_label[:, x1: x1+self.crop_size, y1: y1+self.crop_size]
+        cropped_label = np_label[x1: x1+self.crop_size, y1: y1+self.crop_size]
         return cropped_data, cropped_label
 
 
@@ -74,8 +74,22 @@ class RandomHorizonFlip:
         return np_data, np_label
 
 
+class Resize:
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, np_data, np_label):
+        resized_data = resize(np_data, self.size)
+        resized_label = resize(np_label, self.size, interpolation=cv2.INTER_NEAREST)
+        return resized_data, resized_label
+
+
 def resize(np_arr, size, interpolation=cv2.INTER_LINEAR):
-    np_image = np.transpose(np_arr, axes=(1, 2, 0))
-    resize_image = cv2.resize(np_image, dsize=size, interpolation=interpolation)
-    np_data = np.transpose(resize_image, axes=(2, 0, 1))
+    if len(np_arr.shape) == 3:
+        np_image = np.transpose(np_arr, axes=(1, 2, 0))
+        resize_image = cv2.resize(np_image, dsize=size, interpolation=interpolation)
+        np_data = np.transpose(resize_image, axes=(2, 0, 1))
+    else:
+        np_data = cv2.resize(np_arr, dsize=size, interpolation=interpolation)
+
     return np_data

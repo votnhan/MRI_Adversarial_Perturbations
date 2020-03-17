@@ -20,7 +20,7 @@ class BaseTrainer:
             self.model = torch.nn.DataParallel(model, device_ids=device_ids)
 
         # For training
-        self.criterion = criterion
+        self.criterion = criterion.to(self.device)
         self.metrics = metrics
         self.optimizer = optimizer
         self.metric_names = [x.__name__ for x in self.metrics]
