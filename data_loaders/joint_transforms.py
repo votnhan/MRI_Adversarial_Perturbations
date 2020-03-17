@@ -69,8 +69,8 @@ class RandomHorizonFlip:
     def __call__(self, np_data, np_label):
         flip = random.random() < self.percent
         if flip:
-            np_data = np.flip(np_data, axis=1)
-            np_label = np.flip(np_label, axis=1)
+            np_data = np.flip(np_data, axis=-1)
+            np_label = np.flip(np_label, axis=-1)
         return np_data, np_label
 
 

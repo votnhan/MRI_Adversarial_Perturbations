@@ -41,7 +41,7 @@
     }
   },
   "dice_loss": {
-    "type": "DiceLoss2d",
+    "type": "DiceLoss2dLinear",
     "args": {
       "num_classes": 4,
       "smooth": 1e-6

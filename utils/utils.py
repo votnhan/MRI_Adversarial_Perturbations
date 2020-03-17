@@ -1,5 +1,9 @@
 import pandas as pd
 import json
+import torch.nn.functional as F
+import torch
+import numpy as np
+import os
 from itertools import repeat
 from pathlib import Path
 from collections import OrderedDict
@@ -21,6 +25,20 @@ def write_json(content, fname):
     fname = Path(fname)
     with fname.open('wt') as handle:
         json.dump(content, handle, indent=4, sort_keys=False)
+
+
+def save_output(tensor_output, file_names, epoch, output_dir, percent=0.5):
+    softmax_op = F.softmax(tensor_output, dim=1)
+    class_op = torch.argmax(softmax_op, dim=1)
+    num_output = tensor_output.size(0)
+    num_save = int(percent*num_output)
+    for i in range(num_save):
+        output = class_op[i].cpu().numpy()
+        name, ext = os.path.splitext(file_names[i])
+        new_name = '{}_ep{}{}'.format(name, str(epoch), ext)
+        path_save = os.path.join(output_dir, new_name)
+        np.savez_compressed(path_save, output)
+        print('Save output of sample: {} for track'.format(name))
 
 
 class MetricTracker:

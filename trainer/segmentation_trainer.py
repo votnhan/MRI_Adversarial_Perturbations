@@ -1,5 +1,5 @@
 from base import BaseTrainer
-from utils import MetricTracker
+from utils import MetricTracker, save_output
 from utils.lr_scheduler import MyReduceLROnPlateau
 import torch.nn as nn
 import torch
@@ -23,7 +23,7 @@ class SegmentationTrainer(BaseTrainer):
         # Test
         self.test_loss = MetricTracker(self.loss_name, self.writer)
         self.test_metrics = MetricTracker(*self.metric_names,
-                                           self.writer)
+                                          self.writer)
 
         if isinstance(self.model, nn.DataParallel):
             self.criterion = nn.DataParallel(self.criterion)
@@ -68,7 +68,7 @@ class SegmentationTrainer(BaseTrainer):
                 self.log_for_step(epoch, batch_idx)
 
             if self.save_for_track and (batch_idx % self.save_for_track == 0):
-                pass
+                save_output(output, image_name, epoch, self.checkpoint_dir)
 
             if batch_idx == self.len_epoch:
                 break
