@@ -29,7 +29,9 @@ class SegmentationTrainer(BaseTrainer):
             self.criterion = nn.DataParallel(self.criterion)
 
         # Resume checkpoint if path is available in config
-        # TODO
+        cp_path = self.config['trainer'].get('resume_path')
+        if cp_path:
+            super()._resume_checkpoint()
 
     def reset_scheduler(self):
         self.train_loss.reset()
@@ -63,7 +65,7 @@ class SegmentationTrainer(BaseTrainer):
                 self.train_metrics.update(metric.__name__, metric(output, target))
 
             if batch_idx % self.log_step == 0:
-                self.log_for_step()
+                self.log_for_step(epoch, batch_idx)
 
             if batch_idx == self.len_epoch:
                 break
@@ -83,8 +85,8 @@ class SegmentationTrainer(BaseTrainer):
 
     @staticmethod
     def get_metric_message(metrics, metric_names):
-        metrics_avg = [metrics.avg(metric.__name__) for metric in metrics]
-        message_metrics = ','.join(['{}: {}'.format(x, y) for x, y in zip(metric_names, metrics_avg)])
+        metrics_avg = [metrics.avg(name) for name in metric_names]
+        message_metrics = ', '.join(['{}: {:.6f}'.format(x, y) for x, y in zip(metric_names, metrics_avg)])
         return message_metrics
 
     def log_for_step(self, epoch, batch_idx):
@@ -99,7 +101,7 @@ class SegmentationTrainer(BaseTrainer):
         self.model.eval()
         self.valid_loss.reset()
         self.valid_metrics.reset()
-
+        self.logger.info('Validation: ')
         with torch.no_grad():
             for batch_idx, (data, target, image_name) in enumerate(self.valid_data_loader):
                 data, target = data.to(self.device), target.to(self.device)
@@ -111,6 +113,7 @@ class SegmentationTrainer(BaseTrainer):
                 for metric in self.metrics:
                     self.valid_metrics.update(metric.__name__, metric(output, target))
 
+                self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
                 self.logger.debug('{}: {}'.format(self.loss_name, self.valid_loss.avg(self.loss_name)))
                 self.logger.debug(SegmentationTrainer.get_metric_message(self.valid_metrics, self.metric_names))
 

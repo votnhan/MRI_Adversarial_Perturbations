@@ -61,6 +61,8 @@ class BaseTrainer:
             # iteration-based training
             self.train_data_loader = inf_loop(train_data_loader)
             self.len_epoch = self.config['trainer']['len_epoch']
+        else:
+            self.len_epoch = len(train_data_loader)
 
     @abstractmethod
     def _train_epoch(self, epoch):
@@ -189,3 +191,24 @@ class BaseTrainer:
             best_path = str(self.checkpoint_dir / 'model_best.pth')
             torch.save(state, best_path)
             self.logger.info("Saving current best: model_best.pth ...")
+
+    def _resume_checkpoint(self):
+        resume_path = self.config['trainer']['resume_path']
+        self.logger.info("Loading checkpoint: {} ...".format(resume_path))
+        checkpoint = torch.load(resume_path)
+        self.start_epoch = checkpoint['epoch'] + 1
+        self.mnt_best = checkpoint['monitor_best']
+
+        if checkpoint['config']['model']['type'] != self.config['model']['type']:
+            self.logger.warning("Warning: Architecture configuration given in config file is different from that of "
+                                "checkpoint. This may yield an exception while state_dict is being loaded.")
+
+        self.model.load_state_dict(checkpoint['state_dict'])
+
+        if checkpoint['config']['optimizer']['type'] != self.config['optimizer']['type']:
+            self.logger.warning("Warning: Optimizer type given in config file is different from that of checkpoint. "
+                                "Optimizer parameters not being resumed.")
+        else:
+            self.optimizer.load_state_dict(checkpoint['optimizer'])
+
+        self.logger.info("Checkpoint loaded. Resume training from epoch {}".format(self.start_epoch))

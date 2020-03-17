@@ -8,7 +8,7 @@ def pre_process(output):
     return output_pred
 
 
-def dice_score(output, target, smooth=1.0):
+def dice_score(output, target, smooth=1e-6):
     axis = (-1, -2)
     intersection = torch.sum(output*target, dim=axis)
     sum_output = torch.sum(output, dim=axis)
