@@ -34,6 +34,10 @@ class BaseTrainer:
         self.do_validation = cfg_trainer['do_validation']
         self.do_validation_interval = cfg_trainer['do_validation_interval']
         self.log_step = cfg_trainer['log_step']
+        if cfg_trainer['save_for_track']:
+            self.save_for_track = cfg_trainer['save_for_track']
+        else:
+            self.save_for_track = None
 
         self.start_epoch = 1
         self.checkpoint_dir = config.save_dir

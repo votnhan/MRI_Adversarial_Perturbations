@@ -67,6 +67,9 @@ class SegmentationTrainer(BaseTrainer):
             if batch_idx % self.log_step == 0:
                 self.log_for_step(epoch, batch_idx)
 
+            if self.save_for_track and (batch_idx % self.save_for_track == 0):
+                pass
+
             if batch_idx == self.len_epoch:
                 break
 

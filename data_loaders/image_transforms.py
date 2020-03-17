@@ -1,10 +1,12 @@
 import cv2
 import torch
+import numpy as np
 
 
 class ToTensor:
     def __call__(self, np_data):
-        return torch.from_numpy(np_data.copy())
+        cp_data = np_data.copy().astype(np.float32)
+        return torch.from_numpy(cp_data)
 
 
 class Normalization:

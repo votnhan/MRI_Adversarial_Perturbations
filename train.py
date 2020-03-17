@@ -22,7 +22,7 @@ np.random.seed(SEED)
 
 def main(config):
 
-    # TODO
+    logger = config.get_logger('train')
     joint_transforms, image_transforms, target_transforms, val_transform = _create_transforms(config)
     train_data_loader = config.init_obj('train_data_loader', module_data_loader, joint_transforms=joint_transforms,
                                         image_transforms=image_transforms, target_transforms=target_transforms)
@@ -34,6 +34,8 @@ def main(config):
     model = config.init_obj('model', module_model)
     optimizer = config.init_obj('optimizer', module_optimizer, model.parameters())
     lr_scheduler = config.init_obj('lr_scheduler', module_lr_scheduler, optimizer)
+
+    logger.info(model)
 
     if config['trainer']['name'] == 'SegmentationTrainer':
         trainer = SegmentationTrainer(model, criterion, metrics, optimizer, config, lr_scheduler)

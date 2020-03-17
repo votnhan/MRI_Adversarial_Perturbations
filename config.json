@@ -44,7 +44,7 @@
     "type": "DiceLoss2d",
     "args": {
       "num_classes": 4,
-      "smooth": 1.0
+      "smooth": 1e-6
     }
   },
   "metrics": ["dice_whole_tumor", "dice_tumor_core", "dice_enhancing_tumor"],
@@ -61,7 +61,8 @@
     "do_validation": true,
     "do_validation_interval": 1,
     "len_epoch": 200,
-    "tensorboard": true
+    "tensorboard": true,
+    "save_for_track": 50
   },
   "optimizer":{
     "type": "Adam",
