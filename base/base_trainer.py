@@ -99,6 +99,7 @@ class BaseTrainer:
         """
         Full training logic
         """
+        self.logger.info(self.criterion.name)
         not_improved_count = 0
         for epoch in range(self.start_epoch, self.epochs + 1):
             result = self._train_epoch(epoch)
@@ -134,6 +135,7 @@ class BaseTrainer:
                 self._save_checkpoint(epoch, save_best=best)
 
     def eval(self):
+        self.logger.info(self.criterion.name)
         result = self._valid_epoch(1)
 
         # save logged information into log dict
@@ -145,6 +147,7 @@ class BaseTrainer:
             self.logger.info('    {:15s}: {}'.format(str(key), value))
 
     def test(self):
+        self.logger.info(self.criterion.name)
         result = self._test_epoch(1)
 
         # save logged information into log dict

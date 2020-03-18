@@ -40,13 +40,11 @@
       "num_samples": 50
     }
   },
-  "supervised_loss": {
-    "type": "ExponentialCrossEntropyLoss2d",
+  "dice_loss": {
+    "type": "CrossEntropyLoss2d",
     "args": {
       "frequency": [0.9873051535723489, 0.0019667051872610916,
-                    0.007691321189279732, 0.0030368200511102523],
-      "gamma": 1,
-      "num_classes": 4
+                    0.007691321189279732, 0.0030368200511102523]
     }
   },
   "metrics": ["dice_whole_tumor", "dice_tumor_core", "dice_enhancing_tumor"],
@@ -59,7 +57,7 @@
     "monitor": "min val_supervised_loss",
     "early_stop": 10,
     "accumulation_steps": 1,
-    "log_step": 50,
+    "log_step": 5,
     "do_validation": true,
     "do_validation_interval": 1,
     "tensorboard": true,

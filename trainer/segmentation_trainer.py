@@ -9,7 +9,7 @@ class SegmentationTrainer(BaseTrainer):
     def __init__(self, model, criterion, metrics, optimizer, config, lr_scheduler=None):
         super().__init__(model, criterion, metrics, optimizer, config)
         self.lr_scheduler = lr_scheduler
-        self.loss_name = 'dice_loss'
+        self.loss_name = 'supervised_loss'
 
         # Metrics
         # Train
@@ -129,4 +129,27 @@ class SegmentationTrainer(BaseTrainer):
         return val_log
 
     def _test_epoch(self, epoch):
-        pass
+        self.model.eval()
+        self.test_loss.reset()
+        self.test_metrics.reset()
+        self.logger.info('Test: ')
+        with torch.no_grad():
+            for batch_idx, (data, target, image_name) in enumerate(self.test_data_loader):
+                data, target = data.to(self.device), target.to(self.device)
+                output = self.model(data)
+                loss = self.criterion(output, target)
+
+                self.writer.set_step((epoch - 1) * len(self.test_data_loader) + batch_idx, 'test')
+                self.test_loss.update(self.loss_name, loss.item())
+                for metric in self.metrics:
+                    self.test_metrics.update(metric.__name__, metric(output, target))
+
+                self.logger.debug('{}/{}'.format(batch_idx, len(self.test_data_loader)))
+                self.logger.debug('{}: {}'.format(self.loss_name, self.test_loss.avg(self.loss_name)))
+                self.logger.debug(SegmentationTrainer.get_metric_message(self.test_metrics, self.metric_names))
+
+        log = self.test_loss.result()
+        log.update(self.test_metrics.result())
+        test_log = {'test_{}'.format(k): v for k, v in log.items()}
+        return test_log
+

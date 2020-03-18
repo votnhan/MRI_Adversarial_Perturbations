@@ -15,7 +15,8 @@ class ExponentialLogarithmicLoss(nn.Module):
         self.alpha = alpha
         self.beta = beta
         self.dice_loss = DiceLoss2dLogarithmic(num_classes, gamma, smooth)
-        self.weighted_exp_ce_loss = ExponentialCrossEntropyLoss2d(self.weight, gamma)
+        self.weighted_exp_ce_loss = ExponentialCrossEntropyLoss2d(self.weight, gamma, num_classes)
+        self.name = 'dice_and_ce_loss'
 
     def forward(self, output, target):
         dice_loss = self.dice_loss(output, target)

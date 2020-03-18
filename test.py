@@ -21,13 +21,10 @@ np.random.seed(SEED)
 
 
 def main(config):
-
     logger = config.get_logger('train')
     joint_transforms, image_transforms, target_transforms, val_transform = _create_transforms(config)
-    train_data_loader = config.init_obj('train_data_loader', module_data_loader, joint_transforms=joint_transforms,
-                                        image_transforms=image_transforms, target_transforms=target_transforms)
-    valid_data_loader = config.init_obj('val_data_loader', module_data_loader, image_transforms=val_transform,
-                                        target_transforms=target_transforms)
+    test_data_loader = config.init_obj('test_data_loader', module_data_loader, image_transforms=val_transform,
+                                       target_transforms=target_transforms)
 
     criterion = config.init_obj('supervised_loss', module_loss)
     metrics = [getattr(module_metric, x) for x in config['metrics']]
@@ -36,15 +33,14 @@ def main(config):
     lr_scheduler = config.init_obj('lr_scheduler', module_lr_scheduler, optimizer)
 
     logger.info(model)
-
     if config['trainer']['name'] == 'SegmentationTrainer':
         trainer = SegmentationTrainer(model, criterion, metrics, optimizer, config, lr_scheduler)
     else:
         raise NotImplementedError("Unsupported trainer")
 
-    trainer.setup_loader(train_data_loader, valid_data_loader, None)
+    trainer.setup_loader(None, None, test_data_loader)
 
-    trainer.train()
+    trainer.test()
 
 
 if __name__ == '__main__':

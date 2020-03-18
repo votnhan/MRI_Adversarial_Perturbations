@@ -20,6 +20,7 @@ class DiceLoss2dLinear(nn.Module):
         super(DiceLoss2dLinear, self).__init__()
         self.num_classes = num_classes
         self.smooth = smooth
+        self.name = 'linear_dice_loss'
 
     def forward(self, output, target):
         dice_score = _cal_dice_score(output, target, self.num_classes, self.smooth)
@@ -34,6 +35,7 @@ class DiceLoss2dLogarithmic(nn.Module):
         self.num_classes = num_classes
         self.gamma = gamma
         self.smooth = smooth
+        self.name = 'logarithmic_dice_loss'
 
     def forward(self, output, target):
         dice_score = _cal_dice_score(output, target, self.num_classes, self.smooth)

@@ -33,14 +33,14 @@
     "type": "AxialMRIDataLoader",
     "args": {
       "root": "data/",
-      "batch_size": 8,
+      "batch_size": 32,
       "shuffle": true,
       "num_workers": 0,
       "split": "val",
       "num_samples": 50
     }
   },
-  "dice_loss": {
+  "supervised_loss": {
     "type": "ExponentialLogarithmicLoss",
     "args": {
       "frequency": [0.9873051535723489, 0.0019667051872610916,
@@ -59,7 +59,7 @@
     "save_dir": "saved/",
     "save_period": 1,
     "verbosity": 2,
-    "monitor": "min val_dice_loss",
+    "monitor": "min val_supervised_loss",
     "early_stop": 10,
     "accumulation_steps": 1,
     "log_step": 50,
