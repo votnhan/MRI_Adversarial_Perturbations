@@ -54,6 +54,9 @@ class SegmentationTrainer(BaseTrainer):
             data, target = data.to(self.device), target.to(self.device)
             output = self.model(data)
             loss = self.criterion(output, target)
+            # For debug model
+            if torch.isnan(loss):
+                super()._save_checkpoint(epoch)
 
             self.model.zero_grad()
             loss.backward()

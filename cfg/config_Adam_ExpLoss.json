@@ -41,8 +41,13 @@
     }
   },
   "dice_loss": {
-    "type": "DiceLoss2dLinear",
+    "type": "ExponentialLogarithmicLoss",
     "args": {
+      "frequency": [0.9873051535723489, 0.0019667051872610916,
+                    0.007691321189279732, 0.0030368200511102523],
+      "alpha": 0.8,
+      "beta": 0.2,
+      "gamma": 1,
       "num_classes": 4,
       "smooth": 1e-6
     }
@@ -57,12 +62,11 @@
     "monitor": "min val_dice_loss",
     "early_stop": 10,
     "accumulation_steps": 1,
-    "log_step": 5,
+    "log_step": 50,
     "do_validation": true,
     "do_validation_interval": 1,
-    "len_epoch": 200,
     "tensorboard": true,
-    "save_for_track": 50
+    "save_for_track": null
   },
   "optimizer":{
     "type": "Adam",

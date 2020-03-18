@@ -13,3 +13,17 @@ def class_to_one_hot(target, num_classes=4):
     channels_first = torch.transpose(one_hot, 1, 3)
     reverse_spatial = torch.transpose(channels_first, 2, 3)
     return reverse_spatial
+
+
+def check_nan_tensor(tensor):
+    result = torch.isnan(tensor)
+    isnan = torch.sum(result)
+    if isnan.item() != 0:
+        return True
+    return False
+
+
+def normalized_softmax(tensor, dim):
+    max_val = torch.max(tensor)
+    diff_max = tensor - max_val
+    return F.softmax(diff_max, dim)

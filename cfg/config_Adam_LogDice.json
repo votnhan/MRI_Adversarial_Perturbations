@@ -41,9 +41,10 @@
     }
   },
   "dice_loss": {
-    "type": "DiceLoss2dLinear",
+    "type": "DiceLoss2dLogarithmic",
     "args": {
       "num_classes": 4,
+      "gamma": 1,
       "smooth": 1e-6
     }
   },
@@ -57,12 +58,11 @@
     "monitor": "min val_dice_loss",
     "early_stop": 10,
     "accumulation_steps": 1,
-    "log_step": 5,
+    "log_step": 50,
     "do_validation": true,
     "do_validation_interval": 1,
-    "len_epoch": 200,
     "tensorboard": true,
-    "save_for_track": 50
+    "save_for_track": null
   },
   "optimizer":{
     "type": "Adam",

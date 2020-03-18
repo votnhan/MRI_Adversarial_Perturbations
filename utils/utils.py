@@ -41,6 +41,27 @@ def save_output(tensor_output, file_names, epoch, output_dir, percent=0.5):
         print('Save output of sample: {} for track'.format(name))
 
 
+def cal_frequency_of_label(label_dir):
+    label_dict = {
+        0: 0,
+        1: 0,
+        2: 0,
+        4: 0
+    }
+    labels = os.listdir(label_dir)
+    num_labels = len(labels)
+    for i, label in enumerate(labels):
+        print('{}/{}'.format(i, num_labels))
+        path_label = os.path.join(label_dir, label)
+        label = np.load(path_label)['arr_0']
+        for k, v in label_dict.items():
+            label_dict[k] += np.sum(label == k)
+    sum_voxel = sum([v for k, v in label_dict.items()])
+    for k, v in label_dict.items():
+        label_dict[k] = label_dict[k] / sum_voxel
+    return label_dict
+
+
 class MetricTracker:
     def __init__(self, *keys, writer=None):
         self.writer = writer
