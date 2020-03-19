@@ -103,7 +103,7 @@ class SegmentationTrainer(BaseTrainer):
         self.logger.info(message_loss)
         self.logger.info(message_metrics)
 
-    def _valid_epoch(self, epoch):
+    def _valid_epoch(self, epoch, save_result=False):
         self.model.eval()
         self.valid_loss.reset()
         self.valid_metrics.reset()
@@ -119,6 +119,9 @@ class SegmentationTrainer(BaseTrainer):
                 for metric in self.metrics:
                     self.valid_metrics.update(metric.__name__, metric(output, target))
 
+                if save_result:
+                    save_output(output, image_name, epoch, self.checkpoint_dir, percent=1)
+
                 self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
                 self.logger.debug('{}: {}'.format(self.loss_name, self.valid_loss.avg(self.loss_name)))
                 self.logger.debug(SegmentationTrainer.get_metric_message(self.valid_metrics, self.metric_names))
@@ -128,7 +131,7 @@ class SegmentationTrainer(BaseTrainer):
         val_log = {'val_{}'.format(k): v for k, v in log.items()}
         return val_log
 
-    def _test_epoch(self, epoch):
+    def _test_epoch(self, epoch, save_result=False):
         self.model.eval()
         self.test_loss.reset()
         self.test_metrics.reset()
@@ -143,6 +146,9 @@ class SegmentationTrainer(BaseTrainer):
                 self.test_loss.update(self.loss_name, loss.item())
                 for metric in self.metrics:
                     self.test_metrics.update(metric.__name__, metric(output, target))
+
+                if save_result:
+                    save_output(output, image_name, epoch, self.checkpoint_dir, percent=1)
 
                 self.logger.debug('{}/{}'.format(batch_idx, len(self.test_data_loader)))
                 self.logger.debug('{}: {}'.format(self.loss_name, self.test_loss.avg(self.loss_name)))

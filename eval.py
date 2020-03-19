@@ -23,7 +23,7 @@ np.random.seed(SEED)
 def main(config):
     logger = config.get_logger('train')
     joint_transforms, image_transforms, target_transforms, val_transform = _create_transforms(config)
-    test_data_loader = config.init_obj('test_data_loader', module_data_loader, image_transforms=val_transform,
+    val_data_loader = config.init_obj('val_data_loader', module_data_loader, image_transforms=val_transform,
                                        target_transforms=target_transforms)
 
     criterion = config.init_obj('supervised_loss', module_loss)
@@ -38,9 +38,9 @@ def main(config):
     else:
         raise NotImplementedError("Unsupported trainer")
 
-    trainer.setup_loader(None, None, test_data_loader)
+    trainer.setup_loader(None, val_data_loader, None)
 
-    trainer.test(save_result=True)
+    trainer.eval(save_result=True)
 
 
 if __name__ == '__main__':
