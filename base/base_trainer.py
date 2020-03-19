@@ -61,12 +61,13 @@ class BaseTrainer:
         self.valid_data_loader = valid_data_loader
         self.test_data_loader = test_data_loader
 
-        if 'len_epoch' in self.config['trainer']:
-            # iteration-based training
-            self.train_data_loader = inf_loop(train_data_loader)
-            self.len_epoch = self.config['trainer']['len_epoch']
-        else:
-            self.len_epoch = len(train_data_loader)
+        if train_data_loader:
+            if 'len_epoch' in self.config['trainer']:
+                # iteration-based training
+                self.train_data_loader = inf_loop(train_data_loader)
+                self.len_epoch = self.config['trainer']['len_epoch']
+            else:
+                self.len_epoch = len(train_data_loader)
 
     @abstractmethod
     def _train_epoch(self, epoch):
