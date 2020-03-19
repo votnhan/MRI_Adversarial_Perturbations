@@ -37,7 +37,7 @@
       "shuffle": true,
       "num_workers": 0,
       "split": "val",
-      "num_samples": 50
+      "num_samples": 100
     }
   },
   "test_data_loader": {
@@ -69,7 +69,7 @@
     "monitor": "min val_supervised_loss",
     "early_stop": 10,
     "accumulation_steps": 1,
-    "log_step": 50,
+    "log_step": 10,
     "do_validation": true,
     "do_validation_interval": 1,
     "tensorboard": true,
