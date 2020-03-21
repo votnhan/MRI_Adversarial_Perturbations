@@ -1,1 +1,2 @@
 from .segmentation_trainer import SegmentationTrainer
+from .adversarial_trainer import AdversarialTrainer

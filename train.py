@@ -8,7 +8,7 @@ import argparse
 import torch
 import numpy as np
 from data_loaders import _create_transforms
-from trainer import SegmentationTrainer
+from trainer import SegmentationTrainer, AdversarialTrainer
 from parse_config import ConfigParser
 
 
@@ -24,8 +24,9 @@ def main(config):
 
     logger = config.get_logger('train')
     joint_transforms, image_transforms, target_transforms, val_transform = _create_transforms(config)
-    train_data_loader = config.init_obj('train_data_loader', module_data_loader, joint_transforms=joint_transforms,
-                                        image_transforms=image_transforms, target_transforms=target_transforms)
+    # Turn off joint_transform
+    train_data_loader = config.init_obj('train_data_loader', module_data_loader, image_transforms=image_transforms,
+                                        target_transforms=target_transforms)
     valid_data_loader = config.init_obj('val_data_loader', module_data_loader, image_transforms=val_transform,
                                         target_transforms=target_transforms)
 
@@ -39,6 +40,9 @@ def main(config):
 
     if config['trainer']['name'] == 'SegmentationTrainer':
         trainer = SegmentationTrainer(model, criterion, metrics, optimizer, config, lr_scheduler)
+    elif config['trainer']['name'] == 'AdversarialTrainer':
+        trained_model = config.init_obj('pre_trained', module_model)
+        trainer = AdversarialTrainer(model, trained_model, criterion, metrics, optimizer, config, lr_scheduler)
     else:
         raise NotImplementedError("Unsupported trainer")
 
