@@ -28,3 +28,22 @@ class GaussianBlur:
     def __call__(self, image):
         blur_image = cv2.GaussianBlur(image, self.kernel_size, borderType=self.border_type)
         return blur_image
+
+
+class ScaleRange:
+    def __init__(self, range_scale=None):
+        if range_scale is None:
+            range_scale = [0, 1]
+        self.range_scale = range_scale
+        self.new_range = self.range_scale[1] - self.range_scale[0]
+
+    def __call__(self, image):
+        min_val = image.min()
+        max_val = image.max()
+        old_range = max_val - min_val
+        if old_range == 0:
+            scaled_image = torch.zeros(image.size())
+            scaled_image[:, :, :] = self.range_scale[0]
+        else:
+            scaled_image = (image*self.new_range) / old_range + self.range_scale[0]
+        return scaled_image

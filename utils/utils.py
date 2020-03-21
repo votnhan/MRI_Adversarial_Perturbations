@@ -87,6 +87,17 @@ def save_image(np_array, file_path):
     image.save(file_path)
 
 
+def inf_norm_adjust(noises, epsilon=0.05):
+    n_samples, n_channels = noises.size()[:2]
+    for i in range(n_samples):
+        for j in range(n_channels):
+            inf_norm = noises[i][j].abs().max()
+            scale_factor = min(1.0, epsilon / inf_norm)
+            noises[i][j] *= scale_factor
+
+    return noises
+
+
 def cal_frequency_of_label(label_dir):
     label_dict = {
         0: 0,
