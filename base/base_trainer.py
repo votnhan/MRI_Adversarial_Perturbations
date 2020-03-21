@@ -79,7 +79,7 @@ class BaseTrainer:
         raise NotImplementedError
 
     @abstractmethod
-    def _valid_epoch(self, epoch, save_result):
+    def _valid_epoch(self, epoch, save_result, save_for_visual):
         """
         Training logic for an epoch
 
@@ -88,7 +88,7 @@ class BaseTrainer:
         raise NotImplementedError
 
     @abstractmethod
-    def _test_epoch(self, epoch, save_result):
+    def _test_epoch(self, epoch, save_result, save_for_visual):
         """
         Training logic for an epoch
 
@@ -135,9 +135,9 @@ class BaseTrainer:
             if epoch % self.save_period == 0:
                 self._save_checkpoint(epoch, save_best=best)
 
-    def eval(self, save_result=False):
+    def eval(self, save_result=False, save_for_visual=False):
         self.logger.info(self.criterion.name)
-        result = self._valid_epoch(1, save_result)
+        result = self._valid_epoch(1, save_result, save_for_visual)
 
         # save logged information into log dict
         log = {}
@@ -147,9 +147,9 @@ class BaseTrainer:
         for key, value in log.items():
             self.logger.info('    {:15s}: {}'.format(str(key), value))
 
-    def test(self, save_result=False):
+    def test(self, save_result=False, save_for_visual=False):
         self.logger.info(self.criterion.name)
-        result = self._test_epoch(1, save_result)
+        result = self._test_epoch(1, save_result, save_for_visual)
 
         # save logged information into log dict
         log = {}

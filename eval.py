@@ -40,7 +40,7 @@ def main(config):
 
     trainer.setup_loader(None, val_data_loader, None)
 
-    trainer.eval(save_result=True)
+    trainer.eval(save_result=False, save_for_visual=True)
 
 
 if __name__ == '__main__':

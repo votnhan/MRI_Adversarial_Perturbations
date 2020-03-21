@@ -1,8 +1,9 @@
 from base import BaseTrainer
-from utils import MetricTracker, save_output
+from utils import MetricTracker, save_output, save_mask2image
 from utils.lr_scheduler import MyReduceLROnPlateau
 import torch.nn as nn
 import torch
+import os
 
 
 class SegmentationTrainer(BaseTrainer):
@@ -103,7 +104,7 @@ class SegmentationTrainer(BaseTrainer):
         self.logger.info(message_loss)
         self.logger.info(message_metrics)
 
-    def _valid_epoch(self, epoch, save_result=False):
+    def _valid_epoch(self, epoch, save_result=False, save_for_visual=False):
         self.model.eval()
         self.valid_loss.reset()
         self.valid_metrics.reset()
@@ -122,6 +123,10 @@ class SegmentationTrainer(BaseTrainer):
                 if save_result:
                     save_output(output, image_name, epoch, self.checkpoint_dir, percent=1)
 
+                if save_for_visual:
+                    save_mask2image(output, image_name, os.path.join(self.checkpoint_dir, 'output'))
+                    save_mask2image(target, image_name, os.path.join(self.checkpoint_dir, 'target'))
+
                 self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
                 self.logger.debug('{}: {}'.format(self.loss_name, self.valid_loss.avg(self.loss_name)))
                 self.logger.debug(SegmentationTrainer.get_metric_message(self.valid_metrics, self.metric_names))
@@ -131,7 +136,7 @@ class SegmentationTrainer(BaseTrainer):
         val_log = {'val_{}'.format(k): v for k, v in log.items()}
         return val_log
 
-    def _test_epoch(self, epoch, save_result=False):
+    def _test_epoch(self, epoch, save_result=False, save_for_visual=False):
         self.model.eval()
         self.test_loss.reset()
         self.test_metrics.reset()
@@ -149,6 +154,10 @@ class SegmentationTrainer(BaseTrainer):
 
                 if save_result:
                     save_output(output, image_name, epoch, self.checkpoint_dir, percent=1)
+
+                if save_for_visual:
+                    save_mask2image(output, image_name, os.path.join(self.checkpoint_dir, 'output'))
+                    save_mask2image(target, image_name, os.path.join(self.checkpoint_dir, 'target'))
 
                 self.logger.debug('{}/{}'.format(batch_idx, len(self.test_data_loader)))
                 self.logger.debug('{}: {}'.format(self.loss_name, self.test_loss.avg(self.loss_name)))

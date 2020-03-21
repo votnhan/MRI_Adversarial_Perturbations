@@ -4,9 +4,15 @@ import torch.nn.functional as F
 import torch
 import numpy as np
 import os
+import copy
 from itertools import repeat
 from pathlib import Path
 from collections import OrderedDict
+from PIL import Image
+
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
 
 
 def inf_loop(data_loader):
@@ -27,9 +33,14 @@ def write_json(content, fname):
         json.dump(content, handle, indent=4, sort_keys=False)
 
 
-def save_output(tensor_output, file_names, epoch, output_dir, percent=0.5):
+def result2class(tensor_output):
     softmax_op = F.softmax(tensor_output, dim=1)
     class_op = torch.argmax(softmax_op, dim=1)
+    return class_op
+
+
+def save_output(tensor_output, file_names, epoch, output_dir, percent=0.5):
+    class_op = result2class(tensor_output)
     num_output = tensor_output.size(0)
     num_save = int(percent*num_output)
     for i in range(num_save):
@@ -39,6 +50,41 @@ def save_output(tensor_output, file_names, epoch, output_dir, percent=0.5):
         path_save = os.path.join(output_dir, new_name)
         np.savez_compressed(path_save, output)
         print('Save output of sample: {} for track'.format(name))
+
+
+# Use for both output and target tensor
+def save_mask2image(tensors, tensor_names, output_dir):
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    if len(tensors.size()) > 3:
+        class_op = result2class(tensors)
+    else:
+        class_op = tensors
+    n_samples = tensors.size(0)
+    for i in range(n_samples):
+        output = class_op[i]
+        tensor_name = tensor_names[i]
+        output_path = os.path.join(output_dir, tensor_name)
+        output_image = mask2image(output.cpu().numpy())
+        save_image(output_image, output_path)
+        print('Save output: {}'.format(output_path))
+
+
+def mask2image(label):
+    label_clone = copy.deepcopy(label)
+    label_clone[label == 4] = 3
+    w, h = label.shape
+    result = np.zeros((w, h, 3))
+    result[label_clone == 2] = red
+    result[label_clone == 1] = green
+    result[label_clone == 3] = blue
+    return result
+
+
+def save_image(np_array, file_path):
+    image = Image.fromarray(np_array.astype(np.uint8))
+    image.save(file_path, image)
 
 
 def cal_frequency_of_label(label_dir):
