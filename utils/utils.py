@@ -64,8 +64,8 @@ def save_mask2image(tensors, tensor_names, output_dir):
     n_samples = tensors.size(0)
     for i in range(n_samples):
         output = class_op[i]
-        tensor_name = tensor_names[i]
-        output_path = os.path.join(output_dir, tensor_name)
+        tensor_name, ext = os.path.splitext(tensor_names[i])
+        output_path = os.path.join(output_dir, '{}.png'.format(tensor_name))
         output_image = mask2image(output.cpu().numpy())
         save_image(output_image, output_path)
         print('Save output: {}'.format(output_path))
@@ -84,7 +84,7 @@ def mask2image(label):
 
 def save_image(np_array, file_path):
     image = Image.fromarray(np_array.astype(np.uint8))
-    image.save(file_path, image)
+    image.save(file_path)
 
 
 def cal_frequency_of_label(label_dir):
