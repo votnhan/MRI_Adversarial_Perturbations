@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import os
 import copy
+import matplotlib.pyplot as plt
 from itertools import repeat
 from pathlib import Path
 from collections import OrderedDict
@@ -31,6 +32,63 @@ def write_json(content, fname):
     fname = Path(fname)
     with fname.open('wt') as handle:
         json.dump(content, handle, indent=4, sort_keys=False)
+
+
+def show_sample(arr, figure_size=(12, 24)):
+    n_modals = arr.shape[0]
+    fig, axes = plt.subplots(1, n_modals, figsize=figure_size)
+    for i in range(n_modals):
+      axes[i].imshow(arr[i], cmap='gray')
+
+
+def scale_intensity_input(arr, min_val, max_val, range_scale):
+    old_range = max_val - min_val
+    new_range = range_scale[1] - range_scale[0]
+    n_channels = arr.shape[0]
+    scaled_input = np.zeros(arr.shape)
+    for i in range(n_channels):
+        if old_range[i] == 0:
+            scaled_input[i][:, :] = range_scale[0]
+        else:
+            scaled_input[i] = (arr[i] - min_val[i]) * new_range / old_range[i] + range_scale[0]
+
+    return scaled_input
+
+
+def reverse_intensity_scale(arr, min_val, max_val, range_scale):
+    new_range = max_val - min_val
+    old_range = range_scale[1] - range_scale[0]
+    n_channels = arr.shape[0]
+    scaled_input = np.zeros(arr.shape)
+    for i in range(n_channels):
+        if new_range[i] == 0:
+            scaled_input[i][:, :] = min_val[i]
+        else:
+            scaled_input[i] = (arr[i] - range_scale[0]) * new_range[i] / old_range + min_val[i]
+
+    return scaled_input
+
+
+def adversarial_attack(arr, model, epsilon=0.05):
+    min_val = np.amin(arr, axis=(-1, -2))
+    max_val = np.amax(arr, axis=(-1, -2))
+    tensor_input = torch.from_numpy(arr)
+    tensor_input = tensor_input.to(model.get_device())
+    noise = model(tensor_input)
+    noise_clamped = inf_norm_adjust(noise, epsilon)
+    noise_input = noise_clamped + tensor_input
+    result = torch.clamp(noise_input, min_val, max_val)
+    return result
+
+
+def demo_attack(data, model, range_scale, epsilon):
+    axes = (-1, -2)
+    min_val = np.amin(data, axis=axes)
+    max_val = np.amax(data, axis=axes)
+    scaled_input = scale_intensity_input(data, min_val, max_val, range_scale)
+    noise_input = adversarial_attack(scaled_input, model, epsilon)
+    reversed_input = reverse_intensity_scale(noise_input, min_val, max_val, range_scale)
+    return reversed_input.astype(data.dtype)
 
 
 def result2class(tensor_output):
@@ -91,9 +149,9 @@ def inf_norm_adjust(noises, epsilon=0.05):
     n_samples, n_channels = noises.size()[:2]
     for i in range(n_samples):
         for j in range(n_channels):
-            inf_norm = noises[i][j].abs().max()
+            inf_norm = noises[i].data[j].abs().max()
             scale_factor = min(1.0, epsilon / inf_norm)
-            noises[i][j] *= scale_factor
+            noises[i].data[j] *= scale_factor
 
     return noises
 

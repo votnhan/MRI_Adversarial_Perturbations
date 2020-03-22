@@ -2,7 +2,7 @@ import copy
 from torchvision import transforms as std_transforms
 from .data_loaders import AxialMRIDataLoader
 from .joint_transforms import RandomSizeAndCrop, Resize, RandomHorizonFlip, Compose
-from .image_transforms import ToTensor, Normalization, ScaleRange
+from .image_transforms import ToTensor, Normalization, IntensityScale
 
 
 def _create_transforms(config):
@@ -19,8 +19,8 @@ def _create_transforms(config):
     to_tf = ToTensor()
     # Turn off means, stds normalization
     # normalization = Normalization(image_tf_cfg['means'], image_tf_cfg['stds'])
-    scale = ScaleRange(image_tf_cfg['range_scale'])
-    image_transforms_list = [to_tf, scale]
+    scale = IntensityScale(image_tf_cfg['range_scale'])
+    image_transforms_list = [scale, to_tf]
 
     # target transforms
     target_transforms_list = [ToTensor()]

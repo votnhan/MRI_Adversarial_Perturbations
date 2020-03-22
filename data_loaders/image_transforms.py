@@ -1,6 +1,7 @@
 import cv2
 import torch
 import numpy as np
+from utils import scale_intensity_input
 
 
 class ToTensor:
@@ -30,7 +31,7 @@ class GaussianBlur:
         return blur_image
 
 
-class ScaleRange:
+class IntensityScale:
     def __init__(self, range_scale=None):
         if range_scale is None:
             range_scale = [0, 1]
@@ -38,12 +39,8 @@ class ScaleRange:
         self.new_range = self.range_scale[1] - self.range_scale[0]
 
     def __call__(self, image):
-        min_val = image.min()
-        max_val = image.max()
-        old_range = max_val - min_val
-        if old_range == 0:
-            scaled_image = torch.zeros(image.size())
-            scaled_image[:, :, :] = self.range_scale[0]
-        else:
-            scaled_image = (image*self.new_range) / old_range + self.range_scale[0]
-        return scaled_image
+        axes = (-1, -2)
+        max_val = np.amax(image, axis=axes)
+        min_val = np.amin(image, axis=axes)
+        scale_arr = scale_intensity_input(image, min_val, max_val, self.range_scale)
+        return scale_arr

@@ -1,5 +1,6 @@
 from .segmentation_trainer import SegmentationTrainer
 from utils import save_output, inf_norm_adjust
+from utils.lr_scheduler import MyReduceLROnPlateau
 import torch
 import sys
 
@@ -9,6 +10,7 @@ class AdversarialTrainer(SegmentationTrainer):
         super().__init__(generator, criterion, metrics, optimizer, config, lr_scheduler)
         self.trained_model = trained_model
         self.load_trained_model()
+        self.trained_model.to(self.device)
         self.freeze_trained_model()
         self.noise_epsilon = self.config['trainer']['noise_eps']
         self.range_input = self.config['transforms']['image_transforms']['range_scale']
@@ -66,7 +68,13 @@ class AdversarialTrainer(SegmentationTrainer):
             val_log = self._valid_epoch(epoch)
             log.update(val_log)
 
-    def _valid_epoch(self, epoch):
+        # step lr scheduler
+        if isinstance(self.lr_scheduler, MyReduceLROnPlateau):
+            self.lr_scheduler.step(self.train_loss.avg(self.loss_name))
+
+        return log
+
+    def _valid_epoch(self, epoch, save_result=False, save_for_visual=False):
         self.trained_model.eval()
         self.model.eval()
         self.valid_loss.reset()
