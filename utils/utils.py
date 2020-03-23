@@ -69,15 +69,17 @@ def reverse_intensity_scale(arr, min_val, max_val, range_scale):
     return scaled_input
 
 
-def adversarial_attack(arr, model, epsilon=0.05):
-    min_val = np.amin(arr, axis=(-1, -2))
-    max_val = np.amax(arr, axis=(-1, -2))
-    tensor_input = torch.from_numpy(arr)
-    tensor_input = tensor_input.to(model.get_device())
+def adversarial_attack(arr, model, range_scale, epsilon=0.05):
+    tensor_input = torch.from_numpy(arr).type(torch.FloatTensor)
+
+    if len(tensor_input.size()) == 3:
+        tensor_input = tensor_input.unsqueeze(0)
+
+    tensor_input = tensor_input.to(next(model.parameters()).device)
     noise = model(tensor_input)
     noise_clamped = inf_norm_adjust(noise, epsilon)
     noise_input = noise_clamped + tensor_input
-    result = torch.clamp(noise_input, min_val, max_val)
+    result = torch.clamp(noise_input, range_scale[0], range_scale[1])
     return result
 
 
@@ -86,8 +88,11 @@ def demo_attack(data, model, range_scale, epsilon):
     min_val = np.amin(data, axis=axes)
     max_val = np.amax(data, axis=axes)
     scaled_input = scale_intensity_input(data, min_val, max_val, range_scale)
-    noise_input = adversarial_attack(scaled_input, model, epsilon)
-    reversed_input = reverse_intensity_scale(noise_input, min_val, max_val, range_scale)
+    noise_input = adversarial_attack(scaled_input, model, range_scale, epsilon)
+    np_noise_input = noise_input.detach().cpu().numpy()
+    if np_noise_input.shape[0] == 1:
+        np_noise_input = np_noise_input[0]
+    reversed_input = reverse_intensity_scale(np_noise_input, min_val, max_val, range_scale)
     return reversed_input.astype(data.dtype)
 
 
