@@ -2,6 +2,7 @@ from .segmentation_trainer import SegmentationTrainer
 from utils import save_output, inf_norm_adjust
 from utils.lr_scheduler import MyReduceLROnPlateau
 import torch
+import torch.nn.functional as F
 import sys
 
 
@@ -24,6 +25,17 @@ class AdversarialTrainer(SegmentationTrainer):
         checkpoint = torch.load(snapshot_path)
         self.trained_model.load_state_dict(checkpoint['state_dict'])
 
+    def cal_loss(self, data, target, output, loss_type='reversed_nll_loss'):
+        if loss_type == 'reversed_nll_loss':
+            return (-1)*self.criterion(output, target)
+        elif loss_type == 'least_likely':
+            output_pre_trained = self.trained_model(data)
+            softmax_op = F.softmax(output_pre_trained, dim=1)
+            cls_least_likely = torch.argmin(softmax_op, dim=1)
+            return self.criterion(output, cls_least_likely)
+        else:
+            raise NotImplementedError('Unsupported loss type: {}'.format(loss_type))
+
     def _train_epoch(self, epoch):
         self.model.train()
         self.trained_model.eval()
@@ -37,7 +49,8 @@ class AdversarialTrainer(SegmentationTrainer):
             # TODO: control noise input
             noise_input_clamped = torch.clamp(noise_input, self.range_input[0], self.range_input[1])
             output = self.trained_model(noise_input_clamped)
-            loss = (-1)*self.criterion(output, target)
+            # reverse_nll_loss = self.call_loss(data, target, output)
+            loss = self.cal_loss(data, target, output, loss_type='least_likely')
             # For debug model
             if torch.isnan(loss):
                 super()._save_checkpoint(epoch)

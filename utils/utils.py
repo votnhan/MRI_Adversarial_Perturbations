@@ -96,6 +96,25 @@ def demo_attack(data, model, range_scale, epsilon):
     return reversed_input.astype(data.dtype)
 
 
+def demo_segmentation(data, model, range_scale):
+    axes = (-1, -2)
+    min_val = np.amin(data, axis=axes)
+    max_val = np.amax(data, axis=axes)
+    scaled_input = scale_intensity_input(data, min_val, max_val, range_scale)
+    tensor_input = torch.from_numpy(scaled_input).type(torch.FloatTensor)
+    if len(tensor_input.size()) == 3:
+        tensor_input = tensor_input.unsqueeze(0)
+
+    device = next(model.parameters()).device
+    output_ts = model(tensor_input.to(device))
+    output_cls = result2class(output_ts)
+    output_np = output_cls.detach().cpu().numpy()
+    if output_np.shape[0] == 1:
+        output_np = output_np[0]
+
+    return output_np
+
+
 def result2class(tensor_output):
     softmax_op = F.softmax(tensor_output, dim=1)
     class_op = torch.argmax(softmax_op, dim=1)
