@@ -6,6 +6,7 @@ import numpy as np
 import os
 import copy
 import matplotlib.pyplot as plt
+import nibabel as nib
 from itertools import repeat
 from pathlib import Path
 from collections import OrderedDict
@@ -41,16 +42,35 @@ def show_sample(arr, figure_size=(12, 24)):
       axes[i].imshow(arr[i], cmap='gray')
 
 
+def get_data_from_subject_dir(subject_path, modals, modal_ext):
+    subject_name = os.path.basename(subject_path)
+    list_gather = []
+    for modal in modals:
+        modal_file = '{}_{}.{}'.format(subject_name, modal, modal_ext)
+        modal_path = os.path.join(subject_path, modal_file)
+        modal_image = nib.load(modal_path)
+        modal_arr = modal_image.get_data()
+        list_gather.append(np.expand_dims(modal_arr, 0))
+
+    all_modals_arr = np.concatenate(list_gather, 0)
+    arr_temp = np.expand_dims(all_modals_arr, 0)
+    arr_temp = np.transpose(arr_temp, (4, 1, 2, 3, 0))
+    result = arr_temp[:, :, :, :, 0]
+    return result
+
+
 def scale_intensity_input(arr, min_val, max_val, range_scale):
     old_range = max_val - min_val
     new_range = range_scale[1] - range_scale[0]
-    n_channels = arr.shape[0]
+    n_samples = arr.shape[0]
+    n_channels = arr.shape[1]
     scaled_input = np.zeros(arr.shape)
-    for i in range(n_channels):
-        if old_range[i] == 0:
-            scaled_input[i][:, :] = range_scale[0]
-        else:
-            scaled_input[i] = (arr[i] - min_val[i]) * new_range / old_range[i] + range_scale[0]
+    for i in range(n_samples):
+        for j in range(n_channels):
+            if old_range[i][j] == 0:
+                scaled_input[i, j][:, :] = range_scale[0]
+            else:
+                scaled_input[i, j][:, :] = (arr[i][j] - min_val[i][j]) * new_range / old_range[i][j] + range_scale[0]
 
     return scaled_input
 
@@ -58,13 +78,15 @@ def scale_intensity_input(arr, min_val, max_val, range_scale):
 def reverse_intensity_scale(arr, min_val, max_val, range_scale):
     new_range = max_val - min_val
     old_range = range_scale[1] - range_scale[0]
-    n_channels = arr.shape[0]
+    n_channels = arr.shape[1]
+    n_samples = arr.shape[0]
     scaled_input = np.zeros(arr.shape)
-    for i in range(n_channels):
-        if new_range[i] == 0:
-            scaled_input[i][:, :] = min_val[i]
-        else:
-            scaled_input[i] = (arr[i] - range_scale[0]) * new_range[i] / old_range + min_val[i]
+    for i in range(n_samples):
+        for j in range(n_channels):
+            if new_range[i][j] == 0:
+                scaled_input[i, j][:, :] = min_val[i][j]
+            else:
+                scaled_input[i, j] = (arr[i][j] - range_scale[0]) * new_range[i][j] / old_range + min_val[i][j]
 
     return scaled_input
 
@@ -84,27 +106,28 @@ def adversarial_attack(arr, model, range_scale, epsilon=0.05):
 
 
 def demo_attack(data, model, range_scale, epsilon):
+    new_data = np.expand_dims(data, axis=0)
     axes = (-1, -2)
-    min_val = np.amin(data, axis=axes)
-    max_val = np.amax(data, axis=axes)
-    scaled_input = scale_intensity_input(data, min_val, max_val, range_scale)
+    min_val = np.amin(new_data, axis=axes)
+    max_val = np.amax(new_data, axis=axes)
+    scaled_input = scale_intensity_input(new_data, min_val, max_val, range_scale)
     noise_input = adversarial_attack(scaled_input, model, range_scale, epsilon)
     np_noise_input = noise_input.detach().cpu().numpy()
-    if np_noise_input.shape[0] == 1:
-        np_noise_input = np_noise_input[0]
     reversed_input = reverse_intensity_scale(np_noise_input, min_val, max_val, range_scale)
+
+    if reversed_input.shape[0] == 1:
+        reversed_input = reversed_input[0]
+
     return reversed_input.astype(data.dtype)
 
 
 def demo_segmentation(data, model, range_scale):
+    new_data = np.expand_dims(data, axis=0)
     axes = (-1, -2)
-    min_val = np.amin(data, axis=axes)
-    max_val = np.amax(data, axis=axes)
-    scaled_input = scale_intensity_input(data, min_val, max_val, range_scale)
+    min_val = np.amin(new_data, axis=axes)
+    max_val = np.amax(new_data, axis=axes)
+    scaled_input = scale_intensity_input(new_data, min_val, max_val, range_scale)
     tensor_input = torch.from_numpy(scaled_input).type(torch.FloatTensor)
-    if len(tensor_input.size()) == 3:
-        tensor_input = tensor_input.unsqueeze(0)
-
     device = next(model.parameters()).device
     output_ts = model(tensor_input.to(device))
     output_cls = result2class(output_ts)
@@ -113,6 +136,16 @@ def demo_segmentation(data, model, range_scale):
         output_np = output_np[0]
 
     return output_np
+
+
+def demo_result_after_attack(data, label, trained_model, attacking_model, range_scale, epsilon):
+    tumor_segmented = demo_segmentation(data, trained_model, range_scale)
+    image_tumor_segmented = mask2image(tumor_segmented)
+    noise_input = demo_attack(data, attacking_model, range_scale, epsilon)
+    noise_output = demo_segmentation(noise_input, trained_model, range_scale)
+    image_noise_tumor = mask2image(noise_output)
+    image_label = mask2image(label)
+    return image_label, image_tumor_segmented, image_noise_tumor
 
 
 def result2class(tensor_output):
