@@ -7,6 +7,8 @@ import os
 import copy
 import matplotlib.pyplot as plt
 import nibabel as nib
+import glob
+import shutil
 from itertools import repeat
 from pathlib import Path
 from collections import OrderedDict
@@ -45,18 +47,75 @@ def show_sample(arr, figure_size=(12, 24)):
 def get_data_from_subject_dir(subject_path, modals, modal_ext):
     subject_name = os.path.basename(subject_path)
     list_gather = []
+    list_affine = []
     for modal in modals:
         modal_file = '{}_{}.{}'.format(subject_name, modal, modal_ext)
         modal_path = os.path.join(subject_path, modal_file)
         modal_image = nib.load(modal_path)
         modal_arr = modal_image.get_data()
         list_gather.append(np.expand_dims(modal_arr, 0))
+        list_affine.append(modal_image.get_affine())
 
     all_modals_arr = np.concatenate(list_gather, 0)
     arr_temp = np.expand_dims(all_modals_arr, 0)
     arr_temp = np.transpose(arr_temp, (4, 1, 2, 3, 0))
     result = arr_temp[:, :, :, :, 0]
-    return result
+    return result, list_affine
+
+
+def attack_dataset(train_dir, output_dir, attack_model, dataset_name ='Brats2018'):
+    modals = ['t1', 't1ce', 'flair', 't2']
+    modal_ext = 'nii.gz'
+    range_scale = [-1, 1]
+    epsilon = 0.1
+    n_folder_keep = 3
+    pattern = os.path.join(train_dir, '*', '*')
+    paths_folder = glob.glob(pattern)
+    print('Attacking dataset {} start'.format(dataset_name))
+    for path_folder in paths_folder:
+        split_path = path_folder.split('/')
+        new_path_folder = os.path.join(output_dir, *split_path[-n_folder_keep:])
+        result = attack_patient_data(paths_folder, new_path_folder, attack_model, modals, modal_ext, range_scale,
+                                     epsilon)
+        if not result:
+            print('Folder {} existed !'.format(new_path_folder))
+        else:
+            subject_name = os.path.basename(path_folder)
+            label_file = '{}_seg.{}'.format(subject_name, modal_ext)
+            label_path_src = os.path.join(path_folder, label_file)
+            label_path_des = os.path.join(new_path_folder, label_file)
+            shutil.copy(label_path_src, label_path_des)
+
+    print('Attacking dataset {} end'.format(dataset_name))
+
+
+def attack_patient_data(patient_dir, output_dir, model, modals, modal_extension, range_scale, epsilon=0.1):
+    axes = (-1, -2)
+    subject_name = os.path.basename(patient_dir)
+    if not os.path.exists(patient_dir):
+        return False
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=False)
+
+    data_patient, list_affine = get_data_from_subject_dir(patient_dir, modals, modal_extension)
+    min_val = np.amin(data_patient, axis=axes)
+    max_val = np.amax(data_patient, axis=axes)
+    intensity_scaled_input = scale_intensity_input(data_patient, min_val, max_val, range_scale)
+    noise_data = adversarial_attack(intensity_scaled_input, model, range_scale, epsilon)
+    np_noise_data = noise_data.detach().cpu().numpy()
+    reversed_intensity_output = reverse_intensity_scale(np_noise_data, min_val, max_val, range_scale)
+
+    np_noise_data_tp = np.transpose(reversed_intensity_output, (1, 2, 3, 0))
+    for i in range(np_noise_data_tp.shape[0]):
+        new_image = nib.Nifti1Image(np_noise_data_tp[i], list_affine[i])
+        new_image_name = '{}_{}.{}'.format(subject_name, modals[i], modal_extension)
+        new_image_path = os.path.join(output_dir, new_image_name)
+        new_image.to_filename(new_image_path)
+        print('---- modal: {}'.format(modals[i]))
+
+    print('Attack {}: done'.format(patient_dir))
+    return True
 
 
 def scale_intensity_input(arr, min_val, max_val, range_scale):
@@ -92,6 +151,7 @@ def reverse_intensity_scale(arr, min_val, max_val, range_scale):
 
 
 def adversarial_attack(arr, model, range_scale, epsilon=0.05):
+    model.eval()
     tensor_input = torch.from_numpy(arr).type(torch.FloatTensor)
 
     if len(tensor_input.size()) == 3:
@@ -106,6 +166,7 @@ def adversarial_attack(arr, model, range_scale, epsilon=0.05):
 
 
 def demo_attack(data, model, range_scale, epsilon):
+    model.eval()
     new_data = np.expand_dims(data, axis=0)
     axes = (-1, -2)
     min_val = np.amin(new_data, axis=axes)
@@ -122,6 +183,7 @@ def demo_attack(data, model, range_scale, epsilon):
 
 
 def demo_segmentation(data, model, range_scale):
+    model.eval()
     new_data = np.expand_dims(data, axis=0)
     axes = (-1, -2)
     min_val = np.amin(new_data, axis=axes)
@@ -139,6 +201,8 @@ def demo_segmentation(data, model, range_scale):
 
 
 def demo_result_after_attack(data, label, trained_model, attacking_model, range_scale, epsilon):
+    trained_model.eval()
+    attacking_model.eval()
     tumor_segmented = demo_segmentation(data, trained_model, range_scale)
     image_tumor_segmented = mask2image(tumor_segmented)
     noise_input = demo_attack(data, attacking_model, range_scale, epsilon)
