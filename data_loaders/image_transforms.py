@@ -42,5 +42,9 @@ class IntensityScale:
         axes = (-1, -2)
         max_val = np.amax(image, axis=axes)
         min_val = np.amin(image, axis=axes)
-        scale_arr = scale_intensity_input(image, min_val, max_val, self.range_scale)
+        expanded_image = np.expand_dims(image, axis=0)
+        expanded_max_val = np.expand_dims(max_val, axis=0)
+        expanded_min_val = np.expand_dims(min_val, axis=0)
+        scale_arr = scale_intensity_input(expanded_image, expanded_min_val, expanded_max_val, self.range_scale)
+        scale_arr = scale_arr[0]
         return scale_arr

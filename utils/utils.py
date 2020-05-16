@@ -71,11 +71,13 @@ def attack_dataset(train_dir, output_dir, attack_model, dataset_name ='Brats2018
     n_folder_keep = 3
     pattern = os.path.join(train_dir, '*', '*')
     paths_folder = glob.glob(pattern)
+    n_subjects = len(paths_folder)
     print('Attacking dataset {} start'.format(dataset_name))
-    for path_folder in paths_folder:
+    for i, path_folder in enumerate(paths_folder):
+        print('{}/{}'.format(i+1, n_subjects))
         split_path = path_folder.split('/')
         new_path_folder = os.path.join(output_dir, *split_path[-n_folder_keep:])
-        result = attack_patient_data(paths_folder, new_path_folder, attack_model, modals, modal_ext, range_scale,
+        result = attack_patient_data(path_folder, new_path_folder, attack_model, modals, modal_ext, range_scale,
                                      epsilon)
         if not result:
             print('Folder {} existed !'.format(new_path_folder))
@@ -108,7 +110,7 @@ def attack_patient_data(patient_dir, output_dir, model, modals, modal_extension,
 
     np_noise_data_tp = np.transpose(reversed_intensity_output, (1, 2, 3, 0))
     for i in range(np_noise_data_tp.shape[0]):
-        new_image = nib.Nifti1Image(np_noise_data_tp[i], list_affine[i])
+        new_image = nib.Nifti1Image(np_noise_data_tp[i].astype(np.int16), list_affine[i])
         new_image_name = '{}_{}.{}'.format(subject_name, modals[i], modal_extension)
         new_image_path = os.path.join(output_dir, new_image_name)
         new_image.to_filename(new_image_path)
