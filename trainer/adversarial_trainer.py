@@ -63,7 +63,7 @@ class AdversarialTrainer(SegmentationTrainer):
             # Update train loss, metrics
             self.train_loss.update(self.loss_name, loss.item())
             for metric in self.metrics:
-                self.train_metrics.update(metric.__name__, metric(output, target))
+                self.train_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
 
             if batch_idx % self.log_step == 0:
                 self.log_for_step(epoch, batch_idx)
@@ -107,7 +107,7 @@ class AdversarialTrainer(SegmentationTrainer):
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.valid_loss.update(self.loss_name, loss.item())
                 for metric in self.metrics:
-                    self.valid_metrics.update(metric.__name__, metric(output, target))
+                    self.valid_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
 
                 self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
                 self.logger.debug('{}: {}'.format(self.loss_name, self.valid_loss.avg(self.loss_name)))
