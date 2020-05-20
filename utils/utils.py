@@ -101,13 +101,14 @@ def attack_patient_data(patient_dir, output_dir, model, modals, modal_extension,
         os.makedirs(output_dir, exist_ok=False)
 
     data_patient, list_affine = get_data_from_subject_dir(patient_dir, modals, modal_extension)
+    mask_not_brain = data_patient <= 0
     min_val = np.amin(data_patient, axis=axes)
     max_val = np.amax(data_patient, axis=axes)
     intensity_scaled_input = scale_intensity_input(data_patient, min_val, max_val, range_scale)
     noise_data = adversarial_attack(intensity_scaled_input, model, range_scale, epsilon)
     np_noise_data = noise_data.detach().cpu().numpy()
     reversed_intensity_output = reverse_intensity_scale(np_noise_data, min_val, max_val, range_scale)
-
+    reversed_intensity_output[mask_not_brain] = 0.0
     np_noise_data_tp = np.transpose(reversed_intensity_output, (1, 2, 3, 0))
     for i in range(np_noise_data_tp.shape[0]):
         new_image = nib.Nifti1Image(np_noise_data_tp[i].astype(np.int16), list_affine[i])

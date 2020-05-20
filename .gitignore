@@ -40,6 +40,7 @@ ENV/
 input/
 saved/
 datasets/
+note/
 
 # editor, os cache directory
 .vscode/

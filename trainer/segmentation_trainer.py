@@ -66,7 +66,7 @@ class SegmentationTrainer(BaseTrainer):
             # Update train loss, metrics
             self.train_loss.update(self.loss_name, loss.item())
             for metric in self.metrics:
-                self.train_metrics.update(metric.__name__, metric(output, target))
+                self.train_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
 
             if batch_idx % self.log_step == 0:
                 self.log_for_step(epoch, batch_idx)
@@ -118,7 +118,7 @@ class SegmentationTrainer(BaseTrainer):
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.valid_loss.update(self.loss_name, loss.item())
                 for metric in self.metrics:
-                    self.valid_metrics.update(metric.__name__, metric(output, target))
+                    self.valid_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
 
                 if save_result:
                     save_output(output, image_name, epoch, self.checkpoint_dir, percent=1)
@@ -150,7 +150,7 @@ class SegmentationTrainer(BaseTrainer):
                 self.writer.set_step((epoch - 1) * len(self.test_data_loader) + batch_idx, 'test')
                 self.test_loss.update(self.loss_name, loss.item())
                 for metric in self.metrics:
-                    self.test_metrics.update(metric.__name__, metric(output, target))
+                    self.test_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
 
                 if save_result:
                     save_output(output, image_name, epoch, self.checkpoint_dir, percent=1)
