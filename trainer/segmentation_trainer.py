@@ -86,7 +86,7 @@ class SegmentationTrainer(BaseTrainer):
 
         # step lr scheduler
         if isinstance(self.lr_scheduler, MyReduceLROnPlateau):
-            self.lr_scheduler.step(self.train_loss.avg(self.loss_name))
+            self.lr_scheduler.step(self.valid_loss.avg(self.loss_name))
 
         return log
 
@@ -127,9 +127,10 @@ class SegmentationTrainer(BaseTrainer):
                     save_mask2image(output, image_name, os.path.join(self.checkpoint_dir, 'output'))
                     save_mask2image(target, image_name, os.path.join(self.checkpoint_dir, 'target'))
 
-                self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
-                self.logger.debug('{}: {}'.format(self.loss_name, self.valid_loss.avg(self.loss_name)))
-                self.logger.debug(SegmentationTrainer.get_metric_message(self.valid_metrics, self.metric_names))
+                if batch_idx % self.log_step == 0:
+                    self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
+                    self.logger.debug('{}: {}'.format(self.loss_name, self.valid_loss.avg(self.loss_name)))
+                    self.logger.debug(SegmentationTrainer.get_metric_message(self.valid_metrics, self.metric_names))
 
         log = self.valid_loss.result()
         log.update(self.valid_metrics.result())

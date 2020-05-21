@@ -88,7 +88,7 @@
           "mode": "min",
           "threshold": 0.01,
           "factor": 0.5,
-          "patience": 0,
+          "patience": 1,
           "verbose": true,
           "min_lr": 1e-05,
           "threshold_mode": "rel"
