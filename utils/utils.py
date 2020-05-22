@@ -222,6 +222,9 @@ def result2class(tensor_output):
 
 
 def save_output(tensor_output, file_names, epoch, output_dir, percent=0.5):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     class_op = result2class(tensor_output)
     num_output = tensor_output.size(0)
     num_save = int(percent*num_output)

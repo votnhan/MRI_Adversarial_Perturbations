@@ -121,7 +121,7 @@ class SegmentationTrainer(BaseTrainer):
                     self.valid_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
 
                 if save_result:
-                    save_output(output, image_name, epoch, self.checkpoint_dir, percent=1)
+                    save_output(output, image_name, epoch, os.path.join(self.checkpoint_dir, 'tracker'), percent=1)
 
                 if save_for_visual:
                     save_mask2image(output, image_name, os.path.join(self.checkpoint_dir, 'output'))

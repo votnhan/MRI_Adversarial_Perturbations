@@ -6,7 +6,7 @@ from scipy.spatial.distance import directed_hausdorff
 
 
 def read_mask(mask_path):
-    arr = np.load(mask_path)
+    arr = np.load(mask_path, allow_pickle=True)['arr_0']
     return arr
 
 
@@ -14,6 +14,7 @@ def get_whole_tumor_mask(data):
     return data > 0
 
 
+# Class 4 <=> class 3
 def get_tumor_core_mask(data):
     return np.logical_or(data == 1, data == 4)
 
@@ -62,16 +63,21 @@ metrics_dict = {
 
 masking_function = (get_whole_tumor_mask, get_tumor_core_mask, get_enhancing_tumor_mask)
 header_default = ('Whole tumor', 'Tumor core', 'Enhancing tumor')
+np_extension = 'npz'
 
 
 def evaluation(metric_names, output_path, label_path, output_metrics):
     file_names = os.listdir(output_path)
     file_names.sort()
     rows = [[] for i in range(len(metric_names))]
-    for name in file_names:
+    subject_names = []
+    n_samples = len(file_names)
+    for idx, name in enumerate(file_names):
+        subject_name = name.split('_ep')[0]
         output_file = os.path.join(output_path, name)
-        label_file = os.path.join(label_path, name)
+        label_file = os.path.join(label_path, '{}.{}'.format(subject_name, np_extension))
         output = read_mask(output_file)
+        output[output == 3] = 4
         label = read_mask(label_file)
         for i, metric in enumerate(metric_names):
             if metric not in metrics_dict:
@@ -80,11 +86,17 @@ def evaluation(metric_names, output_path, label_path, output_metrics):
             line = [metrics_dict[metric](func(output), func(label)) for func in masking_function]
             rows[i].append(line)
 
+        subject_names.append(subject_name)
+        print('{}/{}'.format(idx, n_samples))
+
     for i, metric in enumerate(metric_names):
-        export_csv_file(rows[i], header_default, file_names, output_metrics)
+        export_csv_file(rows[i], header_default, subject_names, metric, output_metrics)
 
 
 def export_csv_file(rows, header, index, metric_name, output_fd):
+    if not os.path.exists(output_fd):
+        os.makedirs(output_fd)
+
     df = pd.DataFrame.from_records(rows, columns=header, index=index)
     output_file = '{}.csv'.format(metric_name)
     output_path = os.path.join(output_fd, output_file)
