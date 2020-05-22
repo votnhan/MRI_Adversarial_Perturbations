@@ -41,8 +41,8 @@ class SegmentationTrainer(BaseTrainer):
         self.valid_metrics.reset()
         self.test_loss.reset()
         self.test_metrics.reset()
-        if isinstance(self.lr_scheduler, MyReduceLROnPlateau):
-            self.lr_scheduler.reset()
+        # if isinstance(self.lr_scheduler, MyReduceLROnPlateau):
+        #     self.lr_scheduler.reset()
 
     def prepare_train_epoch(self, epoch):
         self.logger.info('EPOCH: {}'.format(epoch))
