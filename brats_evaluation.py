@@ -31,16 +31,16 @@ def dice_score(output, label, eps=1e-6):
     return dice
 
 
-def sensitivity(output, label):
+def sensitivity(output, label, eps=1e-6):
     tp = np.sum(output*label)
-    return tp / np.sum(label)
+    return (tp + eps)/(np.sum(label) + eps)
 
 
-def specificity(output, label):
+def specificity(output, label, eps=1e-6):
     non_output = output == 0
     non_label = label == 0
     tn = np.sum(non_output*non_label)
-    return tn/np.sum(non_label)
+    return (tn+eps)/(np.sum(non_label) + eps)
 
 
 def hausdorff_distance(output, label):

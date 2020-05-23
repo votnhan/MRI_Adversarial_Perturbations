@@ -86,7 +86,8 @@
     "do_validation_interval": 1,
     "tensorboard": true,
     "save_for_track": null,
-    "noise_eps": 0.05
+    "noise_eps": 0.05,
+    "loss_type": "reversed_nll_loss"
   },
   "optimizer":{
     "type": "Adam",

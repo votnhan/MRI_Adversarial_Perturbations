@@ -50,7 +50,7 @@ class AdversarialTrainer(SegmentationTrainer):
             noise_input_clamped = torch.clamp(noise_input, self.range_input[0], self.range_input[1])
             output = self.trained_model(noise_input_clamped)
             # reverse_nll_loss = self.call_loss(data, target, output)
-            loss = self.cal_loss(data, target, output, loss_type='least_likely')
+            loss = self.cal_loss(data, target, output, loss_type=self.config['trainer']['loss_type'])
             # For debug model
             if torch.isnan(loss):
                 super()._save_checkpoint(epoch)
@@ -83,7 +83,7 @@ class AdversarialTrainer(SegmentationTrainer):
 
         # step lr scheduler
         if isinstance(self.lr_scheduler, MyReduceLROnPlateau):
-            self.lr_scheduler.step(self.train_loss.avg(self.loss_name))
+            self.lr_scheduler.step(self.valid_loss.avg(self.loss_name))
 
         return log
 
@@ -109,9 +109,10 @@ class AdversarialTrainer(SegmentationTrainer):
                 for metric in self.metrics:
                     self.valid_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
 
-                self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
-                self.logger.debug('{}: {}'.format(self.loss_name, self.valid_loss.avg(self.loss_name)))
-                self.logger.debug(SegmentationTrainer.get_metric_message(self.valid_metrics, self.metric_names))
+                if batch_idx % self.log_step == 0:
+                    self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
+                    self.logger.debug('{}: {}'.format(self.loss_name, self.valid_loss.avg(self.loss_name)))
+                    self.logger.debug(SegmentationTrainer.get_metric_message(self.valid_metrics, self.metric_names))
 
         log = self.valid_loss.result()
         log.update(self.valid_metrics.result())

@@ -154,15 +154,16 @@ class SegmentationTrainer(BaseTrainer):
                     self.test_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
 
                 if save_result:
-                    save_output(output, image_name, epoch, self.checkpoint_dir, percent=1)
+                    save_output(output, image_name, epoch, os.path.join(self.checkpoint_dir, 'tracker'), percent=1)
 
                 if save_for_visual:
                     save_mask2image(output, image_name, os.path.join(self.checkpoint_dir, 'output'))
                     save_mask2image(target, image_name, os.path.join(self.checkpoint_dir, 'target'))
 
-                self.logger.debug('{}/{}'.format(batch_idx, len(self.test_data_loader)))
-                self.logger.debug('{}: {}'.format(self.loss_name, self.test_loss.avg(self.loss_name)))
-                self.logger.debug(SegmentationTrainer.get_metric_message(self.test_metrics, self.metric_names))
+                if batch_idx % self.log_step == 0:
+                    self.logger.debug('{}/{}'.format(batch_idx, len(self.test_data_loader)))
+                    self.logger.debug('{}: {}'.format(self.loss_name, self.test_loss.avg(self.loss_name)))
+                    self.logger.debug(SegmentationTrainer.get_metric_message(self.test_metrics, self.metric_names))
 
         log = self.test_loss.result()
         log.update(self.test_metrics.result())
