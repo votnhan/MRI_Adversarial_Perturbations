@@ -1,9 +1,10 @@
 from .segmentation_trainer import SegmentationTrainer
-from utils import save_output, inf_norm_adjust
+from utils import save_output, inf_norm_adjust, save_mask2image
 from utils.lr_scheduler import MyReduceLROnPlateau
 import torch
 import torch.nn.functional as F
 import sys
+import os
 
 
 class AdversarialTrainer(SegmentationTrainer):
@@ -108,6 +109,13 @@ class AdversarialTrainer(SegmentationTrainer):
                 self.valid_loss.update(self.loss_name, loss.item())
                 for metric in self.metrics:
                     self.valid_metrics.update(metric.__name__, metric(output, target), n=output.shape[0])
+
+                if save_result:
+                    save_output(output, image_name, epoch, os.path.join(self.checkpoint_dir, 'tracker'), percent=1)
+
+                if save_for_visual:
+                    save_mask2image(output, image_name, os.path.join(self.checkpoint_dir, 'output'))
+                    save_mask2image(target, image_name, os.path.join(self.checkpoint_dir, 'target'))
 
                 if batch_idx % self.log_step == 0:
                     self.logger.debug('{}/{}'.format(batch_idx, len(self.valid_data_loader)))
