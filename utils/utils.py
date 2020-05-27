@@ -170,19 +170,48 @@ def adversarial_attack(arr, model, range_scale, epsilon=0.05):
 
 def demo_attack(data, model, range_scale, epsilon):
     model.eval()
-    new_data = np.expand_dims(data, axis=0)
+    mask_not_brain = data <= 0
     axes = (-1, -2)
-    min_val = np.amin(new_data, axis=axes)
-    max_val = np.amax(new_data, axis=axes)
-    scaled_input = scale_intensity_input(new_data, min_val, max_val, range_scale)
+    min_val = np.amin(data, axis=axes)
+    max_val = np.amax(data, axis=axes)
+    scaled_input = scale_intensity_input(data, min_val, max_val, range_scale)
     noise_input = adversarial_attack(scaled_input, model, range_scale, epsilon)
     np_noise_input = noise_input.detach().cpu().numpy()
     reversed_input = reverse_intensity_scale(np_noise_input, min_val, max_val, range_scale)
+    reversed_input[mask_not_brain] = 0.0
+    return reversed_input
 
-    if reversed_input.shape[0] == 1:
-        reversed_input = reversed_input[0]
 
-    return reversed_input.astype(data.dtype)
+def get_adv_for_one_sample(data, model, range_scale, epsilon):
+    new_data = np.expand_dims(data, axis=0)
+    results = demo_attack(new_data, model, range_scale, epsilon)
+    result = results[0]
+    return result.astype(data.dtype)
+
+
+def get_adv_for_multiple_samples(data, model, range_scale, epsilon):
+    results = demo_attack(data, model, range_scale, epsilon)
+    return results.astype(data.dtype)
+
+
+def attack_list_samples(container, list_samples, output_container, range_scale, model, epsilon=0.1):
+    if not os.path.exists(output_container):
+        os.makedirs(output_container)
+
+    data = []
+    for sample in list_samples:
+        sample_path = os.path.join(container, '{}.npz'.format(sample))
+        sample_data = np.load(sample_path)['arr_0']
+        data.append(np.expand_dims(sample_data, axis=0))
+
+    data_arr = np.concatenate(data, axis=0)
+    results = get_adv_for_multiple_samples(data_arr, model, range_scale, epsilon)
+
+    for i, x in enumerate(list_samples):
+        noise_sample = results[i]
+        output_path = os.path.join(output_container, '{}.npz'.format(x))
+        np.savez_compressed(output_path, noise_sample)
+        print('Save adversary of sample: {} for track'.format(x))
 
 
 def demo_segmentation(data, model, range_scale):
