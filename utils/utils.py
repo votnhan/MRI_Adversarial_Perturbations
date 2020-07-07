@@ -37,11 +37,16 @@ def write_json(content, fname):
         json.dump(content, handle, indent=4, sort_keys=False)
 
 
-def show_sample(arr, figure_size=(12, 24)):
+def show_sample(arr, figure_size=(12, 24), v_mins=None, v_maxs=None):
+    if v_mins is None:
+      v_mins = np.amin(arr, axis=(-1, -2))
+    
+    if v_maxs is None:
+      v_maxs = np.amax(arr, axis=(-1, -2))
     n_modals = arr.shape[0]
     fig, axes = plt.subplots(1, n_modals, figsize=figure_size)
     for i in range(n_modals):
-      axes[i].imshow(arr[i], cmap='gray')
+      axes[i].imshow(arr[i], cmap='gray', vmin=v_mins[i], vmax=v_maxs[i])
 
 
 def get_data_from_subject_dir(subject_path, modals, modal_ext):
@@ -105,7 +110,7 @@ def attack_patient_data(patient_dir, output_dir, model, modals, modal_extension,
     min_val = np.amin(data_patient, axis=axes)
     max_val = np.amax(data_patient, axis=axes)
     intensity_scaled_input = scale_intensity_input(data_patient, min_val, max_val, range_scale)
-    noise_data = adversarial_attack(intensity_scaled_input, model, range_scale, epsilon)
+    noise_data, _, _, _ = adversarial_attack(intensity_scaled_input, model, range_scale, epsilon)
     np_noise_data = noise_data.detach().cpu().numpy()
     reversed_intensity_output = reverse_intensity_scale(np_noise_data, min_val, max_val, range_scale)
     reversed_intensity_output[mask_not_brain] = 0.0
@@ -165,7 +170,7 @@ def adversarial_attack(arr, model, range_scale, epsilon=0.05):
     noise_clamped = inf_norm_adjust(noise, epsilon)
     noise_input = noise_clamped + tensor_input
     result = torch.clamp(noise_input, range_scale[0], range_scale[1])
-    return result
+    return result, noise_input, noise_clamped, noise
 
 
 def demo_attack(data, model, range_scale, epsilon):
@@ -175,11 +180,14 @@ def demo_attack(data, model, range_scale, epsilon):
     min_val = np.amin(data, axis=axes)
     max_val = np.amax(data, axis=axes)
     scaled_input = scale_intensity_input(data, min_val, max_val, range_scale)
-    noise_input = adversarial_attack(scaled_input, model, range_scale, epsilon)
-    np_noise_input = noise_input.detach().cpu().numpy()
-    reversed_input = reverse_intensity_scale(np_noise_input, min_val, max_val, range_scale)
-    reversed_input[mask_not_brain] = 0.0
-    return reversed_input
+    results = adversarial_attack(scaled_input, model, range_scale, epsilon)
+    np_results = [x.detach().cpu().numpy() for x in results]
+    np_results_rerv_scale = [reverse_intensity_scale(x, min_val, max_val, range_scale) for x in np_results]
+    
+    for x in np_results_rerv_scale:
+        x[mask_not_brain] = 0.0
+    
+    return np_results_rerv_scale
 
 
 def get_adv_for_one_sample(data, model, range_scale, epsilon):
