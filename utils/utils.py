@@ -17,6 +17,7 @@ from PIL import Image
 red = (255, 0, 0)
 green = (0, 255, 0)
 blue = (0, 0, 255)
+white = (255, 255, 255)
 
 
 def inf_loop(data_loader):
@@ -47,6 +48,7 @@ def show_sample(arr, figure_size=(12, 24), v_mins=None, v_maxs=None):
     fig, axes = plt.subplots(1, n_modals, figsize=figure_size)
     for i in range(n_modals):
       axes[i].imshow(arr[i], cmap='gray', vmin=v_mins[i], vmax=v_maxs[i])
+      axes[i].axis('off')
 
 
 def get_data_from_subject_dir(subject_path, modals, modal_ext):
@@ -222,18 +224,22 @@ def attack_list_samples(container, list_samples, output_container, range_scale, 
         print('Save adversary of sample: {} for track'.format(x))
 
 
-def demo_segmentation(data, model, range_scale):
+def demo_segmentation(data, model, range_scale, over_classes=False):
     model.eval()
-    new_data = np.expand_dims(data, axis=0)
     axes = (-1, -2)
-    min_val = np.amin(new_data, axis=axes)
-    max_val = np.amax(new_data, axis=axes)
-    scaled_input = scale_intensity_input(new_data, min_val, max_val, range_scale)
+    min_val = np.amin(data, axis=axes)
+    max_val = np.amax(data, axis=axes)
+    scaled_input = scale_intensity_input(data, min_val, max_val, range_scale)
     tensor_input = torch.from_numpy(scaled_input).type(torch.FloatTensor)
     device = next(model.parameters()).device
     output_ts = model(tensor_input.to(device))
     output_cls = result2class(output_ts)
     output_np = output_cls.detach().cpu().numpy()
+
+    if over_classes:
+        one_hot = np.eye(4)[output_np]
+        output_np = np.transpose(one_hot, (0, 3, 1, 2)).astype(np.bool_)
+
     if output_np.shape[0] == 1:
         output_np = output_np[0]
 
@@ -303,6 +309,17 @@ def mask2image(label):
     result[label_clone == 3] = blue
     return result
 
+def mask2image_over_classes(one_hot_mask):
+    list_colors = [white, green, red, blue]
+    n_classes = one_hot_mask.shape[0]
+    w, h = one_hot_mask.shape[1:]
+    results = []
+    for i in range(n_classes):
+        mask = np.zeros((w, h, 3))
+        mask[one_hot_mask[i]] = list_colors[i]
+        results.append(mask)
+
+    return results
 
 def save_image(np_array, file_path):
     image = Image.fromarray(np_array.astype(np.uint8))
