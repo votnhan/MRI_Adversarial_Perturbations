@@ -45,6 +45,7 @@ def visualize_sample(path_container, sample_name, output_container):
         show_channel(arr[i])
         output_file = '{}_{}.png'.format(sample_name, modalities[i])
         plt.savefig(os.path.join(output_container, output_file), bbox_inches='tight')
+        plt.close()
 
     print('Saved channel figures for {}.'.format(sample_name))
 
@@ -93,6 +94,7 @@ def overlay_label_for_sample(path_container, sample_name, label_container, outpu
         output_image = '{}_{}_overlay.png'.format(sample_name, modal_name)
     output_path = os.path.join(output_container, output_image)
     plt.savefig(output_path, bbox_inches='tight')
+    plt.close()
     print('Overlay for {} on {} modality.'.format(sample_name, modal_name))
 
 

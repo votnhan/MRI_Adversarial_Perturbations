@@ -201,7 +201,8 @@ def get_adv_for_one_sample(data, model, range_scale, epsilon):
 
 def get_adv_for_multiple_samples(data, model, range_scale, epsilon):
     results = demo_attack(data, model, range_scale, epsilon)
-    return results.astype(data.dtype)
+    noise_input_clamped = results[0]
+    return noise_input_clamped.astype(data.dtype)
 
 
 def attack_list_samples(container, list_samples, output_container, range_scale, model, epsilon=0.1):
