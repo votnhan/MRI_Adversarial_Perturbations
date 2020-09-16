@@ -1,4 +1,4 @@
-## Using [Generative Adversarial Perturbation](https://arxiv.org/abs/1712.02328) method for adversarial attack brain tumor segmentation model
+## Use [Generative Adversarial Perturbation](https://arxiv.org/abs/1712.02328) method to adversarially attack brain tumor segmentation model
 ### Dataset: [BRATS 2018](https://www.med.upenn.edu/sbia/brats2018/data.html) 
 ### Process: 2 steps
 ![Train segmentation model h](/images/train_h.png)
