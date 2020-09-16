@@ -46,7 +46,7 @@
     "args": {
       "root": "data/",
       "batch_size": 8,
-      "shuffle": true,
+      "shuffle": false,
       "num_workers": 0,
       "split": "val",
       "num_samples": 100
@@ -57,7 +57,7 @@
     "args": {
       "root": "data/",
       "batch_size": 8,
-      "shuffle": true,
+      "shuffle": false,
       "num_workers": 0,
       "split": "test",
       "num_samples": -1

@@ -87,7 +87,9 @@ def evaluation(metric_names, output_path, label_path, output_metrics):
             rows[i].append(line)
 
         subject_names.append(subject_name)
-        print('{}/{}'.format(idx, n_samples))
+        
+        if idx % 1000 == 0:
+            print('{}/{}'.format(idx, n_samples))
 
     for i, metric in enumerate(metric_names):
         export_csv_file(rows[i], header_default, subject_names, metric, output_metrics)
